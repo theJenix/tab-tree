@@ -1,3 +1,7 @@
+
+// Create the link graph and the synchronized storage
+LinkGraph = new LinkGraphCons(new SynchronizedStore(new LocalStore("autosave"), new ServerStore("http://localhost:3000/v1")));
+
 function openTab(url) {
     chrome.tabs.create({
         url: url

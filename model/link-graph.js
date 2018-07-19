@@ -1,4 +1,5 @@
-function LinkGraphCons() {
+function LinkGraphCons(store) {
+    // console.log(store);
     var graph = new Graph();
 
     function LinkInfo(url, title, description, color) {
@@ -20,7 +21,7 @@ function LinkGraphCons() {
         if (parent) {
             graph.addEdge(parent, url);
         }
-        this.syncLocal();
+        this.syncNodes();
     };
 
     this.addOrganizationNode = function addOrganizationNode(title, description, color, other) {
@@ -28,7 +29,7 @@ function LinkGraphCons() {
         graph.addNode(title, info);
         this.updateInfo(title, {organization: true});
         this.updateInfo(title, other || {})
-        this.syncLocal();
+        this.syncNodes();
     };
 
     this.addSearchNode = function addSearchNode(url, search, parent) {
@@ -37,12 +38,12 @@ function LinkGraphCons() {
         if (parent) {
             graph.addEdge(parent, url);
         }
-        this.syncLocal();
+        this.syncNodes();
     };
 
     this.addLink = function addLink(from, to) {
         graph.addEdge(from, to);
-        this.syncLocal();
+        this.syncNodes();
     };
 
 
@@ -50,7 +51,7 @@ function LinkGraphCons() {
 
     this.removeNode = function removeNode(url) {
         graph.removeNode(url);
-        this.syncLocal();
+        this.syncNodes();
     };
 
     this.collapseNode = function collapseNode(url) {
@@ -63,12 +64,12 @@ function LinkGraphCons() {
             }
         }
         graph.removeNode(url);
-        this.syncLocal();
+        this.syncNodes();
     };
 
     this.removeLink = function removeLink(from, to) {
         graph.removeEdge(from, to);
-        this.syncLocal();
+        this.syncNodes();
     };
 
 
@@ -76,21 +77,21 @@ function LinkGraphCons() {
 
     this.changeColor = function changeColor(url, color) {
         graph.getNode(url).value.color = color;
-        this.syncLocal();
+        this.syncNodes();
     };
 
     this.setTitle = function setTitle(url, title) {
         if (title) {
             graph.getNode(url).value.title = title;
         }
-        this.syncLocal();
+        this.syncNodes();
     };
 
     this.setDescription = function setDescription(url, description) {
         if (description) {
             graph.getNode(url).value.description = description;
         }
-        this.syncLocal();
+        this.syncNodes();
     };
 
     this.updateInfo = function updateInfo(url, items) {
@@ -98,7 +99,7 @@ function LinkGraphCons() {
         for (var item in items) {
             node.value[item] = items[item];
         }
-        this.syncLocal();
+        this.syncNodes();
     };
 
 
@@ -140,19 +141,20 @@ function LinkGraphCons() {
 
     /* Autosave functionality */
 
-    this.syncLocal = function syncLocal() {
-        chrome.storage.local.set({"autosave": graph.getNodeSet()});
+    this.syncNodes = function syncNodes() {
+        // TODO: pass in from caller?
+        error_fn = function(code, error) {
+            console.error('Error ' + code + ' saving to server: ' + error);
+        };
+        store.save(graph.getNodeSet(), error_fn);
     };
 
-    this.loadLocal = function loadLocal() {
-        chrome.storage.local.get("autosave", function (obj) {
-            if (obj) {
-                graph = new Graph(obj.autosave);
-            }
+    this.loadNodes = function loadNodes() {
+        store.load(function(nodes) {
+            graph = new Graph(nodes);
         });
     };
 
-    this.loadLocal();
+    this.loadNodes();
 };
 
-LinkGraph = new LinkGraphCons();
