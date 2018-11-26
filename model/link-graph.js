@@ -17,7 +17,7 @@ function LinkGraphCons(store) {
     this.addNode = function addNode(url, title, description, color, other, parent) {
         var info = new LinkInfo(url, title || "Untitled", description || "No description available", color || "#ccc");
         graph.addNode(url, info);
-        this.updateInfo(url, other || {})
+        this._updateInfo(url, other || {})
         if (parent) {
             graph.addEdge(parent, url);
         }
@@ -27,8 +27,8 @@ function LinkGraphCons(store) {
     this.addOrganizationNode = function addOrganizationNode(title, description, color, other) {
         var info = new LinkInfo(title, title, description || "No description available", color || "#fff");
         graph.addNode(title, info);
-        this.updateInfo(title, {organization: true});
-        this.updateInfo(title, other || {})
+        this._updateInfo(title, {organization: true});
+        this._updateInfo(title, other || {})
         this.syncNodes();
     };
 
@@ -94,12 +94,12 @@ function LinkGraphCons(store) {
         this.syncNodes();
     };
 
-    this.updateInfo = function updateInfo(url, items) {
+    this._updateInfo = function _updateInfo(url, items) {
+        //NOTE: this does not sync.  the caller must sync
         var node = graph.getNode(url);
         for (var item in items) {
             node.value[item] = items[item];
         }
-        this.syncNodes();
     };
 
 
