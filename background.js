@@ -1,6 +1,7 @@
 
 // Create the link graph and the synchronized storage
-LinkGraph = new LinkGraphCons(new SynchronizedStore(new LocalStore("autosave"), new ServerStore("http://localhost:3000/v1")));
+// TODO this should be reloaded with some regularity, at least when the tab tree page is opened, but possibly have a listener/websocket/long poll dealy with the server
+LinkGraph = new LinkGraphCons(new SynchronizedStore(new LocalStore("autosave"), new ServerStore(server_url)));
 
 function openTab(url) {
     chrome.tabs.create({
@@ -29,9 +30,32 @@ function createPageMenuItem(title, parent, onclick) {
     return menuItem;
 }
 
+function createContextMenusForVisualization() {
+    chrome.contextMenus.removeAll();
+    var root = chrome.contextMenus.create({
+        title: 'TabTree',
+        contexts: nonLinkContexts
+    },
+        function() {
+            chrome.contextMenus.create(createPageMenuItem(
+                'Create organization...',
+                root,
+                function(info, tab) {
+                    var title = prompt("Enter a title");
+                    if (title && !LinkGraph.getNode(title)) {
+                        var description = prompt("Enter a description");
+                        LinkGraph.addOrganizationNode(title, description);
+                        updateGraphVisualization();
+                    } else {
+                        alert("Title must be unique and nonempty");
+                    }
+                }));
+        });
+}
+
 function createContextMenus(currentTabInGraph) {
     chrome.contextMenus.removeAll();
-    
+
     if (currentTabInGraph) {
         var root = chrome.contextMenus.create({
                 title: 'TabTree',
@@ -142,6 +166,12 @@ function createContextMenus(currentTabInGraph) {
                             updateGraphVisualization();
                         }
                     }));
+                chrome.contextMenus.create(createPageMenuItem(
+                    'Close tab',
+                    root,
+                    function(info, tab) {
+                        chrome.tabs.remove(tab.id, function () {});
+                    }));
             });
 
         chrome.contextMenus.create({
@@ -166,23 +196,39 @@ function createContextMenus(currentTabInGraph) {
                 createContextMenus(true);
                 updateGraphVisualization();
             }));
+        chrome.contextMenus.create(createPageMenuItem(
+            'Add page to tree and close',
+            root,
+            function(info, tab) {
+                LinkGraph.addNode(info.pageUrl, tab.title);
+                createContextMenus(true);
+                updateGraphVisualization();
+                chrome.tabs.remove(tab.id, function () {});
+            }));
     }
 }
 
 var activeTabId = -1;
 
+function createContextMenusForUrl(url) {
+    if (url) {
+        if (url.endsWith("visualization/graph-viewer.html")) {
+            createContextMenusForVisualization();
+        } else {
+            createContextMenus(LinkGraph.getNode(url));
+        }
+    }
+}
 chrome.tabs.onActivated.addListener(function(activeInfo) {
     activeTabId = activeInfo.tabId;
     chrome.tabs.get(activeInfo.tabId, function(tab) {
-        if (tab.url) {
-            createContextMenus(LinkGraph.getNode(tab.url));
-        }
+        createContextMenusForUrl(tab.url);
     });
 });
 
 chrome.tabs.onUpdated.addListener(function (tabId, changeInfo, tab) {
     if (tabId === activeTabId && changeInfo.url) {
-        createContextMenus(LinkGraph.getNode(changeInfo.url));
+        createContextMenusForUrl(changeInfo.url);
     }
 });
 

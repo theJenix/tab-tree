@@ -89,13 +89,20 @@ function ServerStore(base_url) {
         xhr.open("GET", load_url, true);
         xhr.onreadystatechange = function () {
             //console.log('in onreadystatechange: ' + xhr.readyState);
-            if(xhr.readyState === 4 && xhr.status === 200) {
-                if (this.debug) {
-                    console.log(xhr.responseText);
+            if(xhr.readyState === 4) {
+                if (xhr.status === 200) {
+                    if (this.debug) {
+                        console.log(xhr.responseText);
+                    }
+                    obj = JSON.parse(this.responseText);
+                    nodes = obj.nodes;
+                    cb(outer.translate_in(nodes));
+                } else {
+                    // TODO: display some kind of error
+                    // TODO: FUTUREEEEEEs
+                    console.error("" + xhr.status + ": " + xhr.responseText)
+                    cb({})
                 }
-                obj = JSON.parse(this.responseText);
-                nodes = obj.nodes;
-                cb(outer.translate_in(nodes));
             }
         };
         xhr.send();

@@ -18,10 +18,13 @@ function generateLinks() {
     graphLinks = [];
     graphNodes.forEach(function (node) {
         for (childid in node.childids) {
-            graphLinks.push({source: nodeMapping[node.value.url],
-                       target: nodeMapping[childid],
-                       sourceUrl: node.value.url,
-                       targetUrl: childid});
+            // FIXME: a bug with deleting a connected node left a node with an invalid childid.  This protects us, but we should fix delete.
+            if (nodeMapping[childid]) {
+                graphLinks.push({source: nodeMapping[node.value.url],
+                    target: nodeMapping[childid],
+                    sourceUrl: node.value.url,
+                    targetUrl: childid});
+            }
         }
     });
 }
@@ -433,10 +436,17 @@ document.addEventListener("DOMContentLoaded", function() {
         var left = (node.x + translate[0]) * scale + 30 * Math.sqrt(scale);
         var top = (node.y + translate[1]) * scale + 20 * Math.sqrt(scale);
 
+
+        var text = node.value.title;
+        // TODO: this really should be a test for organization notes, since that's the only place this is possible
+        if (node.value.title != node.value.url) {
+           text += " [" + node.value.url + "]";
+        }
+
         d3.select("#titlePane")
             .style("left", left + "px")
             .style("top", top + "px")
-            .html(node.value.title)
+            .html(text)
             .style("visibility", "visible");
     };
 
