@@ -1,4 +1,9 @@
 
+//CONSTANTS
+server_url = FILL ME IN 
+///
+
+
 // Create the link graph and the synchronized storage
 // TODO this should be reloaded with some regularity, at least when the tab tree page is opened, but possibly have a listener/websocket/long poll dealy with the server
 LinkGraph = new LinkGraphCons(new SynchronizedStore(new LocalStore("autosave"), new ServerStore(server_url)));
